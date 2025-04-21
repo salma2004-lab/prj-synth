@@ -3,7 +3,7 @@
 
   <div class="hero_area">
     <div class="bg-box">
-      <img src="images/hero-bg.jpg" alt="">
+      <img src="../images/hero-bg.jpg" alt="">
     </div>
     <!-- header section strats -->
     <header class="header_section">
@@ -25,8 +25,8 @@
       <div class="row">
         <?php include_once 'table_order.php'?>
         <div class="map_container ">
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3386.0639451322504!2d-4.430351425003927!3d31.932021226689887!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd984b0010e31a47%3A0x3a80500fd17a60d6!2zU25hY2sgQWwgQmFyYWthIHwg2LPZhtin2YMg2KfZhNio2LHZg9ip!5e0!3m2!1sfr!2sma!4v1743861943172!5m2!1sfr!2sma" 
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3386.0639451322504!2d-4.430351425003927!3d31.932021226689887!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd984b0010e31a47%3A0x3a80500fd17a60d6!2zU25hY2sgQWwgQmFyYWthIHwg2LPZhtin2YMg2KfZhNio2LHZg9ip!5e0!3m2!1sfr!2sma!4v1743861943172!5m2!1sfr!2sma"
             width=100% ;
             height=345px ;
             borderradius=10px ;

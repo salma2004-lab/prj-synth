@@ -2057,3 +2057,8 @@ button.add-to-cart {
   border-top: 1px solid #eee;
   padding-top: 15px;
 }
+
+.btn {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}

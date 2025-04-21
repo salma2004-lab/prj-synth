@@ -22,8 +22,15 @@ if (! empty($currentDayPromotions)): ?>
         <?php foreach ($currentDayPromotions as $promo): ?>
             <div class="promo-card" data-day="<?php echo htmlspecialchars($promo['day_of_week']); ?>">
                 <h2><?php echo htmlspecialchars($promo['title']); ?></h2>
-                <p><strong>Jour:</strong>                                                                                                                                                                                                                                                                                                                                         <?php echo htmlspecialchars($promo['day_name']); ?></p>
-                <p><?php echo $promo['description']; ?></p>
+                <p><strong>Jour:</strong>                                                                                                                                                                                                                                                                                                                                                                                  <?php echo htmlspecialchars($promo['day_name']); ?></p>
+                <?php
+                    $description = str_replace(
+                        '{highlight}',
+                        '<span class="highlight">' . htmlspecialchars($promo['highlight_text']) . '</span>',
+                        htmlspecialchars($promo['description'])
+                    );
+                    echo $description;
+                ?>
             </div>
         <?php endforeach; ?>
     </div>

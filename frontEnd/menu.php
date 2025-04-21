@@ -3,7 +3,7 @@
 <body class="sub_page show-pagination">
     <div class="hero_area">
         <div class="bg-box">
-            <img src="images/hero-bg.jpg" alt="">
+            <img src="../images/hero-bg.jpg" alt="">
         </div>
 
         <!-- Header Section -->
@@ -42,26 +42,26 @@
                             // Sanitize category name for use in HTML classes
                             $sanitizedCategoryName = strtolower(str_replace(' ', '-', $item['category_name'] ?? 'uncategorized'));
                         ?>
-		                    <div class="col-sm-6 col-lg-4 all <?php echo htmlspecialchars($sanitizedCategoryName); ?>">
-		                        <div class="box" data-id="<?php echo htmlspecialchars($item['id']); ?>">
-		                            <div>
-		                                <div class="img-box">
-		                                    <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>" />
-		                                </div>
-		                                <div class="detail-box">
-		                                    <h5><?php echo htmlspecialchars($item['item_name']); ?></h5>
-		                                    <p><?php echo htmlspecialchars($item['description']); ?></p>
-		                                    <div class="options">
-		                                        <h6><?php echo htmlspecialchars(number_format($item['price'], 2)); ?> DH</h6>
-		                                        <button class="add-to-cart" onclick="addToCart(<?php echo htmlspecialchars($item['id']); ?>)">
-		                                            <img src="icons/cart.png" alt="Add to cart" width="22px">
-		                                        </button>
-		                                    </div>
-		                                </div>
-		                            </div>
-		                        </div>
-		                    </div>
-				                    <?php endforeach; ?>
+			                    <div class="col-sm-6 col-lg-4 all<?php echo htmlspecialchars($sanitizedCategoryName); ?>">
+			                        <div class="box" data-id="<?php echo htmlspecialchars($item['id']); ?>">
+			                            <div>
+			                                <div class="img-box">
+			                                    <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>" />
+			                                </div>
+			                                <div class="detail-box">
+			                                    <h5><?php echo htmlspecialchars($item['item_name']); ?></h5>
+			                                    <p><?php echo htmlspecialchars($item['description']); ?></p>
+			                                    <div class="options">
+			                                        <h6><?php echo htmlspecialchars(number_format($item['price'], 2)); ?> DH</h6>
+			                                        <button class="add-to-cart" onclick="addToCart(<?php echo htmlspecialchars($item['id']); ?>)">
+			                                            <img src="icons/cart.png" alt="Add to cart" width="22px">
+			                                        </button>
+			                                    </div>
+			                                </div>
+			                            </div>
+			                        </div>
+			                    </div>
+					                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
