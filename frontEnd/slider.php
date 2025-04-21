@@ -23,9 +23,9 @@
                                     <h1><?php echo htmlspecialchars($item['name']); ?></h1>
                                     <p><?php echo htmlspecialchars($item['description']); ?></p>
                                     <div class="btn-box">
-                                        <a href="<?php echo htmlspecialchars($item['link_url']); ?>" class="btn1">
-                                            Commander Maintenant
-                                        </a>
+                                        <button class="btn1" onclick="addToCart(<?php echo htmlspecialchars($item['id']); ?>)">
+		                                            Commander Maintenant
+		                                        </button>
                                     </div>
                                 </div>
                             </div>

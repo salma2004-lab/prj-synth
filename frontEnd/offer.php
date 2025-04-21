@@ -23,10 +23,11 @@
                         <div class="detail-box">
                             <h5><?php echo htmlspecialchars($offer['name']); ?></h5>
                             <h6><span><?php echo htmlspecialchars(number_format($offer['discount'], 0)); ?>%</span> Off</h6>
-                            <a href="#">
-                                Commander Maintenant
-                                <img src="icons/cart.png" alt="Add to Cart" style="width: 22px;" />
-                            </a>
+                            <div class="btn-box">
+                                        <button class="btn1" onclick="addToCart(<?php echo htmlspecialchars($offer['id']); ?>)">
+		                                            Commander Maintenant
+		                                        </button>
+                                    </div>
                         </div>
                     </div>
                 </div>

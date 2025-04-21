@@ -42,26 +42,26 @@
                             // Sanitize category name for use in HTML classes
                             $sanitizedCategoryName = strtolower(str_replace(' ', '-', $item['category_name'] ?? 'uncategorized'));
                         ?>
-	                        <div class="col-sm-6 col-lg-4 all <?php echo htmlspecialchars($sanitizedCategoryName); ?>">
-	                            <div class="box">
-	                                <div>
-	                                    <div class="img-box">
-	                                        <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="" />
-	                                    </div>
-	                                    <div class="detail-box">
-	                                        <h5><?php echo htmlspecialchars($item['item_name']); ?></h5>
-	                                        <p><?php echo htmlspecialchars($item['description']); ?></p>
-	                                        <div class="options">
-	                                            <h6><?php echo htmlspecialchars(number_format($item['price'], 2)); ?> DH</h6>
-	                                            <a href="#" class="add-to-cart">
-	                                                <img src="icons/cart.png" alt="" width="22px">
-	                                            </a>
-	                                        </div>
-	                                    </div>
-	                                </div>
-	                            </div>
-	                        </div>
-	                    <?php endforeach; ?>
+		                    <div class="col-sm-6 col-lg-4 all <?php echo htmlspecialchars($sanitizedCategoryName); ?>">
+		                        <div class="box" data-id="<?php echo htmlspecialchars($item['id']); ?>">
+		                            <div>
+		                                <div class="img-box">
+		                                    <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="<?php echo htmlspecialchars($item['item_name']); ?>" />
+		                                </div>
+		                                <div class="detail-box">
+		                                    <h5><?php echo htmlspecialchars($item['item_name']); ?></h5>
+		                                    <p><?php echo htmlspecialchars($item['description']); ?></p>
+		                                    <div class="options">
+		                                        <h6><?php echo htmlspecialchars(number_format($item['price'], 2)); ?> DH</h6>
+		                                        <button class="add-to-cart" onclick="addToCart(<?php echo htmlspecialchars($item['id']); ?>)">
+		                                            <img src="icons/cart.png" alt="Add to cart" width="22px">
+		                                        </button>
+		                                    </div>
+		                                </div>
+		                            </div>
+		                        </div>
+		                    </div>
+				                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -73,6 +73,7 @@
     <script src="js/jquery-3.4.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
     <script src="js/bootstrap.js"></script>
+    <script src="js/cart.js"></script>
     <script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
