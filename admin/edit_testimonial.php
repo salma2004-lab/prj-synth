@@ -1,80 +1,75 @@
 <?php
-    session_start();
+session_start();
 
-    // Redirect to login page if user is not logged in
-    if (! isset($_SESSION['user_id'])) {
-        header('Location: login.php');
+// Redirect to login page if user is not logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+require_once 'db.php';
+
+$target_dir = '../images/client_avis/';
+if (! is_dir($target_dir)) {
+    mkdir($target_dir, 0755, true);
+}
+
+$testimonial_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Fetch the testimonial data
+try {
+    $stmt = $pdo->prepare("SELECT * FROM testimonials WHERE id = ?");
+    $stmt->execute([$testimonial_id]);
+    $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$item) {
+        echo '<script>alert("Témoignage introuvable."); window.location.href = "testimonials.php";</script>';
         exit;
     }
+} catch (PDOException $e) {
+    echo '<script>alert("Erreur lors de la récupération du témoignage : ' . htmlspecialchars($e->getMessage()) . '");</script>';
+    exit;
+}
 
-    require_once 'db.php'; // Include database connection
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = trim($_POST['name']);
+    $testimonial_text = trim($_POST['testimonial']);
+    $image_url = $item['image_url']; 
 
-    // Fetch testimonial ID from the query string
-    $testimonial_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    
 
-    // Fetch the testimonial data
     try {
-        $stmt = $pdo->prepare("SELECT * FROM testimonials WHERE id = ?");
-        $stmt->execute([$testimonial_id]);
-        $testimonial_data = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (! $testimonial_data) {
-            echo '<script>alert("Témoignage introuvable.");</script>';
-
-        }
-    } catch (PDOException $e) {
-        echo '<script>alert("Erreur lors de la récupération du témoignage : ' . htmlspecialchars($e->getMessage()) . '");</script>';
-
-    }
-
-    // Handle form submission
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $name             = trim($_POST['name']);
-        $testimonial_text = trim($_POST['testimonial']);
-        $image_url        = $testimonial_data['image_url']; // Retain the existing image by default
-
-        // Handle image upload (if a new image is provided)
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            $targetDir  = '../images/client_avis/';
-            $fileName   = preg_replace("/[^a-zA-Z0-9\._-]/", "", basename($_FILES['image']['name']));
-            $targetFile = $targetDir . $fileName;
+            $image_name  = basename($_FILES['image']['name']);
+            $target_file = $target_dir . $image_name;
 
-            // Validate file type
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            if (in_array($_FILES['image']['type'], $allowedTypes)) {
-                if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
-                    // Delete the old image if it exists
-                    if ($testimonial_data['image_url'] && file_exists('../' . $testimonial_data['image_url'])) {
-                        unlink('../' . $testimonial_data['image_url']);
-                    }
-                    $image_url = '../images/client_avis/' . $fileName; // Update image URL
-                } else {
-                    echo '<script>alert("Erreur lors du téléchargement de l\'image.");</script>';
-
-                }
-            } else {
-                echo '<script>alert("Type d\'image non autorisé. Formats acceptés : JPG, PNG, GIF.");</script>';
+            $check = getimagesize($_FILES['image']['tmp_name']);
+            if ($check === false) {
+                echo '<script>alert("The file is not a valid image.");</script>';
             }
-        }
-
-        try {
-            // Update the testimonial in the database
-            $stmt = $pdo->prepare("
-            UPDATE testimonials
-            SET name = ?, testimonial = ?, image_url = ?
-            WHERE id = ?
-        ");
+            if ($_FILES['image']['size'] > 5242880) {
+                echo '<script>alert("The file is too large. Please upload an image smaller than 5MB.");</script>';
+            }
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
+                $image_url = $target_file;
+            } else {
+                echo '<script>alert("Error uploading file. Check directory permissions.");</script>';
+            }
+            $stmt = $pdo->prepare("UPDATE testimonials SET name = ?, testimonial = ?, image_url = ? WHERE id = ?");
             $stmt->execute([$name, $testimonial_text, $image_url, $testimonial_id]);
-
-            echo '<script>alert("Témoignage mis à jour avec succès.");</script>';
-            echo '<script>window.location.href = "testimonials.php";</script>';
-
-        } catch (Exception $e) {
-            echo '<script>alert("Erreur lors de la mise à jour du témoignage : ' . htmlspecialchars($e->getMessage()) . '");</script>';
-            echo '<script>window.location.href = "testimonials.php";</script>';
-
         }
+        else {
+            $stmt = $pdo->prepare("UPDATE testimonials SET name = ?, testimonial = ? WHERE id = ?");
+            $stmt->execute([$name, $testimonial_text, $testimonial_id]);
+        }
+        echo '<script>alert("Témoignage mis à jour avec succès.");</script>';
+        echo '<script>window.location.href = "testimonials.php";</script>';
+        exit;
+    } catch (Exception $e) {
+        echo '<script>alert("Erreur lors de la mise à jour : ' . htmlspecialchars($e->getMessage()) . '");</script>';
     }
+}
 ?>
 
 <?php include_once 'includes/header.php'; ?>
@@ -85,23 +80,24 @@
     <form method="POST" action="" enctype="multipart/form-data">
         <div class="mb-3">
             <label for="name" class="form-label">Nom</label>
-            <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($testimonial_data['name']); ?>" required>
+            <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($item['name']); ?>" required>
         </div>
 
         <div class="mb-3">
             <label for="testimonial" class="form-label">Témoignage</label>
-            <textarea class="form-control" id="testimonial" name="testimonial" rows="5" required><?php echo htmlspecialchars($testimonial_data['testimonial']); ?></textarea>
+            <textarea class="form-control" id="testimonial" name="testimonial" rows="5" required><?php echo htmlspecialchars($item['testimonial']); ?></textarea>
         </div>
 
         <div class="mb-3">
-            <label for="image" class="form-label">Image (Facultatif)</label>
-            <input type="file" class="form-control" id="image" name="image">
-            <?php if (! empty($testimonial_data['image_url'])): ?>
+            <label for="image" class="form-label">Image (facultative)</label>
+            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+            <?php if (!empty($item['image_url'])): ?>
                 <div class="mt-2">
                     <strong>Image actuelle :</strong><br>
-                    <img src="<?php echo htmlspecialchars($testimonial_data['image_url']); ?>" alt="Image actuelle" style="max-width: 200px; margin-top: 10px;">
+                    <img src="<?php echo htmlspecialchars($item['image_url']); ?>" alt="Image actuelle" style="max-width: 200px;">
                 </div>
             <?php endif; ?>
+            <small class="form-text text-muted">Laissez vide pour conserver l'image actuelle. Max 5 Mo.</small>
         </div>
 
         <button type="submit" class="btn btn-primary">Enregistrer</button>

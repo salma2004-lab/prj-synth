@@ -44,14 +44,13 @@
     }
 
     $top_selling_stmt = $pdo->query("
-    SELECT p.name, SUM(oi.quantity) as total_quantity
-    FROM order_items oi
-    JOIN menu_items p ON oi.product_id = p.id
-    GROUP BY p.id
-    ORDER BY total_quantity DESC
+    SELECT name, sales_count as total_quantity
+    FROM menu_items
+    WHERE sales_count > 0
+    ORDER BY sales_count DESC
     LIMIT 5");
     $top_selling_products = $top_selling_stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
     // Get pending reservations (all reservations sorted by date)
     $pending_reservations_stmt = $pdo->query("
     SELECT * FROM reservations
@@ -84,4 +83,4 @@
                 <?php include_once 'includes/pending_reservations.php'; ?>
                 <!--  -->
 
-<?php include_once 'footer.php'; ?>
+                <?php include_once 'includes/footer.php'; ?>

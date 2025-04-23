@@ -26,7 +26,7 @@
                 </ul>
             </div>
         <?php endif; ?>
-<?php if ($success): ?>
+<?php if (isset ($success)): ?>
             <div class="alert alert-success">
                 Catégorie ajoutée avec succès.
             </div>

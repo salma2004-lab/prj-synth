@@ -1,5 +1,7 @@
 <?php
-    session_start();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
     if (! isset($_SESSION['user_id'])) {
         header('Location: login.php');
@@ -29,9 +31,6 @@
         case 'promotions.php':
             $page_title = 'Promotions';
             break;
-        case 'offers.php':
-            $page_title = 'Offers';
-            break;
         case 'testimonials.php':
             $page_title = 'Testimonials';
             break;
@@ -43,6 +42,9 @@
             break;
         case 'manage_users.php':
             $page_title = 'User Management';
+            break;
+        case 'profile.php':
+            $page_title = 'My Profile';
             break;
         default:
             $page_title = '';
@@ -102,12 +104,6 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link                                                                                                                                                         <?php echo $currentPage == 'offers.php' ? 'active' : '' ?>" href="offers.php">
-                        <i class="fas fa-tags me-1"></i> Offers
-                    </a>
-                </li>
-
-                <li class="nav-item">
                     <a class="nav-link                                                                                                                                                         <?php echo $currentPage == 'testimonials.php' ? 'active' : '' ?>" href="testimonials.php">
                         <i class="fas fa-comment me-1"></i> Testimonials
                     </a>
@@ -136,6 +132,11 @@
 
             <!-- Right side: Logout -->
             <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link <?php echo $currentPage == 'profile.php' ? 'active' : '' ?>" href="profile.php">
+                        <i class="fas fa-user-circle me-1"></i> My Profile
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link text-danger" href="logout.php">
                         <i class="fas fa-sign-out-alt me-1"></i> Logout

@@ -13,7 +13,7 @@
     $stmt   = $pdo->query("SELECT * FROM orders ORDER BY order_date DESC");
     $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Update order status logic (for example, mark as confirmed)
+    // Update order status logic
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id']) && isset($_POST['status'])) {
         $order_id = (int) $_POST['order_id'];
         $status   = $_POST['status'];
@@ -26,41 +26,52 @@
         if ($order) {
             $current_status = $order['status'];
 
-            // Check if the current status is "pending" or "confirmed"
+            // Allow status change from pending to any status or confirmed to delivered/cancelled
             if ($current_status === 'pending' || $current_status === 'confirmed') {
                 // Update the order status
                 $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
                 $stmt->execute([$status, $order_id]);
 
-                // If the status is 'delivered', update sales count for all menu items in the order
-                if ($status === 'delivered') {
-                    // Fetch all items in this order
-                    $stmt = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
-                    $stmt->execute([$order_id]);
-                    $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                // Fetch all items in this order
+                $stmt = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+                $stmt->execute([$order_id]);
+                $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    // Begin a transaction to ensure all updates happen atomically
-                    $pdo->beginTransaction();
+                // Begin a transaction to ensure all updates happen atomically
+                $pdo->beginTransaction();
 
-                    try {
-                        // Loop through each order item and update the sales count in the menu_items table
+                try {
+                    // If changing to confirmed, increment sales count
+                    if ($status === 'confirmed' && $current_status === 'pending') {
                         foreach ($order_items as $item) {
                             $product_id = $item['product_id'];
                             $quantity   = $item['quantity'];
 
-                            // Update sales_count by adding the quantity of items sold
+                            // Increment the sales count
                             $stmt = $pdo->prepare("UPDATE menu_items SET sales_count = sales_count + ? WHERE id = ?");
                             $stmt->execute([$quantity, $product_id]);
                         }
-
-                        // Commit the transaction after all updates are done
-                        $pdo->commit();
-                    } catch (Exception $e) {
-                        // If any error occurs, rollback the transaction
-                        $pdo->rollBack();
-                        // Optionally, log the error or handle it as needed
-                        echo "Failed to update sales count: " . $e->getMessage();
                     }
+                    // If changing to cancelled, decrement sales count (only if coming from confirmed)
+                    else if ($status === 'cancelled' && $current_status === 'confirmed') {
+                        foreach ($order_items as $item) {
+                            $product_id = $item['product_id'];
+                            $quantity   = $item['quantity'];
+
+                            // Decrement the sales count, but don't go below zero
+                            $stmt = $pdo->prepare("UPDATE `menu_items` SET sales_count = GREATEST(sales_count - ?, 0) WHERE id = ?");
+                            $stmt->execute([$quantity, $product_id]);
+                        }
+                    }
+                    // If changing to delivered from confirmed, no change in sales count needed
+                    
+                    // Commit the transaction after all updates are done
+                    $pdo->commit();
+                } catch (Exception $e) {
+                    // If any error occurs, rollback the transaction
+                    $pdo->rollBack();
+                    // Optionally, log the error or handle it as needed
+                    echo "Failed to update sales count: " . $e->getMessage();
                 }
 
                 // Redirect to the same page after updating the status

@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$name]);
 
                 $success = true;
+                echo '<script>window.location.href = "categories.php";</script>';
+
             } catch (Exception $e) {
                 $errors[] = "Une erreur s'est produite lors de l'ajout de la catégorie. Veuillez réessayer.";
             }

@@ -8,11 +8,11 @@
     require_once 'db.php'; // Include the database connection
 
     // Fetch all menu items
-    $stmt       = $pdo->query("SELECT mi.*, c.name AS category_name FROM menu_items mi LEFT JOIN categories c ON mi.category_id = c.id ORDER BY mi.category_id, mi.name");
+    $stmt = $pdo->query("SELECT mi.*, c.name AS category_name FROM menu_items mi LEFT JOIN categories c ON mi.category_id = c.id ORDER BY mi.category_id, mi.name");
     $menu_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Fetch all categories for dropdowns
-    $stmt       = $pdo->query("SELECT * FROM categories ORDER BY name");
+    $stmt = $pdo->query("SELECT * FROM categories ORDER BY name");
     $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <?php include_once 'includes/header.php'; ?>
@@ -39,7 +39,11 @@
                         </div>
                         <div class="form-group">
                             <label for="price">Price (DH) <span class="text-danger">*</span></label>
-                            <input type="number" step="1"  min="0" min="0" class="form-control" id="price" name="price" required>
+                            <input type="number" step="1" min="0" class="form-control" id="price" name="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount">Discount (%)</label>
+                            <input type="number" step="1" min="0" max="100" class="form-control" id="discount" name="discount" placeholder="0">
                         </div>
                         <div class="form-group">
                             <label for="category_id">Category <span class="text-danger">*</span></label>
@@ -63,6 +67,7 @@
                 </div>
             </div>
         </div>
+
         <!-- Menu Items List -->
         <div class="col-lg-8">
             <div class="card shadow mb-4">
@@ -77,6 +82,7 @@
                                     <th>Name</th>
                                     <th>Description</th>
                                     <th>Price (DH)</th>
+                                    <th>Discount (%)</th>
                                     <th>Category</th>
                                     <th>Image</th>
                                     <th>Actions</th>
@@ -85,14 +91,18 @@
                             <tbody>
                                 <?php if (empty($menu_items)): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center">No menu items found. Add your first item above.</td>
+                                        <td colspan="7" class="text-center">No menu items found. Add your first item above.</td>
                                     </tr>
                                 <?php else: ?>
-<?php foreach ($menu_items as $item): ?>
+                                    <?php foreach ($menu_items as $item): ?>
                                         <tr>
                                             <td><?php echo htmlspecialchars($item['name']); ?></td>
                                             <td><?php echo htmlspecialchars(substr($item['description'], 0, 100)) . (strlen($item['description']) > 100 ? '...' : ''); ?></td>
                                             <td><?php echo number_format($item['price'], 2); ?> DH</td>
+                                            <td><?php echo $item['discount']; ?>% <br>  <?php if ($item['discount'] !== 0): ?>
+                                            <?php $discountedPrice = $item['price'] - ($item['price'] * $item['discount'] / 100);?>
+                                                <small class="text-success">After Discount: <?php echo number_format($discountedPrice, 2); ?> DH</small>
+                                            <?php endif;?></td>
                                             <td><?php echo htmlspecialchars($item['category_name']); ?></td>
                                             <td class="text-center">
                                                 <?php if (! empty($item['image_url'])): ?>
@@ -107,7 +117,7 @@
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
-<?php endif; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>

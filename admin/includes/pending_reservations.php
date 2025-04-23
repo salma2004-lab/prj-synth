@@ -9,7 +9,6 @@
                     <th>Customer</th>
                     <th>Date</th>
                     <th>Guests</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -18,11 +17,7 @@
                     <td><?php echo htmlspecialchars($reservation['name']); ?></td>
                     <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($reservation['reservation_date']))); ?></td>
                     <td><?php echo htmlspecialchars($reservation['guests']); ?></td>
-                    <td>
-                        <a href="reservation_details.php?id=<?php echo htmlspecialchars($reservation['id']); ?>" class="btn btn-sm btn-info">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
+                    
                 </tr>
                 <?php endforeach; ?>
                 <?php if (empty($pending_reservations)): ?>

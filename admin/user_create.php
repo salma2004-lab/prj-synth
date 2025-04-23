@@ -1,11 +1,12 @@
 <?php
     session_start();
 
-    // Check if the user is logged in and has admin privileges
+    // comment mn hna ila bghit n9ad user fash tkun table users khawya
     if (! isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
         header('Location: login.php');
         exit;
     }
+    // tal hna
 
     require_once 'db.php';
 
