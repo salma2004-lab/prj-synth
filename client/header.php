@@ -15,7 +15,7 @@
     <meta name="author" content="" />
     <link
       rel="shortcut icon"
-      href="../images/WhatsApp_Image_2025-02-14_à_21.30.52_a8a4a58f-removebg-preview.png"
+      href="../images/logo.png"
       type=""
     />
 

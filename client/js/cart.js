@@ -13,15 +13,25 @@ function addToCart(productId) {
   })
     .then(response => response.json())
     .then(data => {
-      if (data.success) {
+      try {
         // Show notification
         showCartNotification('Produit ajouté au panier!');
 
-        // Update cart count in nav if it exists
-        updateCartCount(data.cart);
-      } else {
-        alert('Erreur lors de l\'ajout au panier');
+        // Vérifier si data.cart existe avant de l'utiliser
+        if (data && data.cart) {
+          updateCartCount(data.cart);
+        } else {
+          console.log("Avertissement: données du panier non disponibles pour la mise à jour du compteur");
+        }
       }
+      catch (e) {
+        console.error('Erreur lors de l\'ajout au panier:', e);
+        alert('Erreur lors de l\'ajout au panier: ' + e.message);
+      }
+    })
+    .catch(error => {
+      console.error('Erreur de requête AJAX:', error);
+      alert('Erreur de communication avec le serveur: ' + error.message);
     });
 }
 

@@ -5,7 +5,7 @@
     function getOffers()
     {
         global $pdo;
-        $stmt = $pdo->query("SELECT * FROM offers");
+        $stmt = $pdo->query("SELECT * FROM menu_items where discount > 0 ORDER BY discount DESC LIMIT 4");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

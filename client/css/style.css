@@ -779,6 +779,7 @@ a:focus {
   width: 100%;
   -webkit-transition: all .2s;
   transition: all .2s;
+  height: 100%;
 }
 
 .offer_section .box .detail-box h5 {

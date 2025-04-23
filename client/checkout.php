@@ -2,8 +2,7 @@
 
 <body class="sub_page">
     <div class="hero_area">
-        <div class="bg-box">
-            <img src="../images/hero-bg.jpg" alt="">
+        <div class="bg-box" style="background: linear-gradient(135deg, #030303, #696868)">
         </div>
 
         <!-- Header Section -->
@@ -31,37 +30,47 @@
                     exit;
                 }
 
-                // Get cart items and total
                 require_once 'db.php';
-                $cart_items = [];
-                $cart_total = 0;
+               // Get cart items and total
+$cart_items = [];
+$cart_total = 0;
 
-                // Prepare placeholders for SQL IN clause
-                $placeholders = implode(',', array_fill(0, count(array_keys($cart_data)), '?'));
+// Prepare placeholders for SQL IN clause
+$placeholders = implode(',', array_fill(0, count(array_keys($cart_data)), '?'));
 
-                if (! empty($placeholders)) {
-                    $stmt = $pdo->prepare("
-                    SELECT id, name, price, image_url
-                    FROM menu_items
-                    WHERE id IN ($placeholders)
-                ");
-                    $stmt->execute(array_keys($cart_data));
-                    $menu_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (! empty($placeholders)) {
+    $stmt = $pdo->prepare("
+        SELECT id, name, price, discount, image_url
+        FROM menu_items
+        WHERE id IN ($placeholders)
+    ");
+    $stmt->execute(array_keys($cart_data));
+    $menu_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    foreach ($menu_items as $item) {
-                        $quantity   = $cart_data[$item['id']];
-                        $item_total = $item['price'] * $quantity;
-                        $cart_total += $item_total;
+    foreach ($menu_items as $item) {
+        // Calculate the discounted price
+        $discounted_price = $item['price'] - ($item['price'] * $item['discount'] / 100);
+        
+        // Get the quantity from the cart data
+        $quantity   = $cart_data[$item['id']];
+        
+        // Calculate the item total using the discounted price
+        $item_total = $discounted_price * $quantity;
+        
+        // Add to the cart total
+        $cart_total += $item_total;
 
-                        $cart_items[] = [
-                            'id'         => $item['id'],
-                            'name'       => $item['name'],
-                            'price'      => $item['price'],
-                            'quantity'   => $quantity,
-                            'item_total' => $item_total,
-                        ];
-                    }
-                }
+        // Add the item details to the cart items array
+        $cart_items[] = [
+            'id'         => $item['id'],
+            'name'       => $item['name'],
+            'price'      => $discounted_price,  // Using the discounted price
+            'quantity'   => $quantity,
+            'item_total' => $item_total,
+        ];
+    }
+}
+
 
                 // Calculate delivery fee
                 $delivery_fee        = ($cart_total > 100) ? 0 : 20;

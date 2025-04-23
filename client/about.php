@@ -2,8 +2,7 @@
 
 <body class="sub_page">
     <div class="hero_area">
-        <div class="bg-box">
-            <img src="../images/hero-bg.jpg" alt="" />
+        <div class="bg-box" style="background: linear-gradient(135deg, #030303, #696868)">
         </div>
         <!-- Header Section Starts -->
         <header class="header_section">

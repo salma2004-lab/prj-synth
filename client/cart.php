@@ -2,8 +2,7 @@
 
 <body class="sub_page">
     <div class="hero_area">
-        <div class="bg-box">
-            <img src="../images/hero-bg.jpg" alt="">
+        <div class="bg-box" style="background: linear-gradient(135deg, #030303, #696868)">
         </div>
 
         <!-- Header Section -->
@@ -36,24 +35,28 @@
 
                     if (! empty($placeholders)) {
                         $stmt = $pdo->prepare("
-                        SELECT id, name, description, price, image_url
-                        FROM menu_items
-                        WHERE id IN ($placeholders)
-                    ");
+                            SELECT id, name, description, price, discount, image_url
+                            FROM menu_items
+                            WHERE id IN ($placeholders)
+                        ");
                         $stmt->execute(array_keys($cart_data));
                         $menu_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                         // Build cart items with full details
                         foreach ($menu_items as $item) {
                             $quantity   = $cart_data[$item['id']];
-                            $item_total = $item['price'] * $quantity;
+                            $discounted_price = $item['price'];
+                            if ($item['discount'] > 0) {
+                                $discounted_price = $item['price'] * (1 - $item['discount'] / 100);
+                            }
+                            $item_total = $discounted_price * $quantity;
                             $cart_total += $item_total;
 
                             $cart_items[] = [
                                 'id'          => $item['id'],
                                 'name'        => $item['name'],
                                 'description' => $item['description'],
-                                'price'       => $item['price'],
+                                'price'       => $discounted_price,
                                 'image_url'   => $item['image_url'],
                                 'quantity'    => $quantity,
                                 'item_total'  => $item_total,
@@ -117,8 +120,9 @@
                                     <span>Frais de livraison</span>
                                     <span>
                                         <?php
-                                            $delivery_fee = ($cart_total > 100) ? 0 : 20;
-                                            echo($delivery_fee > 0) ? number_format($delivery_fee, 2) . ' DH' : 'Gratuit';
+                                            // Change the free delivery threshold here:
+                                            $delivery_fee = ($cart_total > 250) ? 0 : 20;
+                                            echo ($delivery_fee > 0) ? number_format($delivery_fee, 2) . ' DH' : 'Gratuit';
                                         ?>
                                     </span>
                                 </div>
@@ -134,7 +138,7 @@
                                 </div>
 
                                 <div class="shipping-note">
-                                    <p>Livraison gratuite pour les commandes de plus de 100 DH</p>
+                                    <p>Livraison gratuite pour les commandes de plus de 250 DH</p>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +160,6 @@
                 return;
             }
 
-            // Ajax request to update cart
             fetch('update_cart.php', {
                 method: 'POST',
                 headers: {
@@ -180,7 +183,6 @@
 
         function removeItem(productId) {
             if (confirm('Êtes-vous sûr de vouloir supprimer cet article du panier?')) {
-                // Ajax request to remove item
                 fetch('update_cart.php', {
                     method: 'POST',
                     headers: {
@@ -204,7 +206,6 @@
 
         function clearCart() {
             if (confirm('Êtes-vous sûr de vouloir vider votre panier?')) {
-                // Ajax request to clear cart
                 fetch('update_cart.php', {
                     method: 'POST',
                     headers: {

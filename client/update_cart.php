@@ -45,12 +45,20 @@ switch ($input['action']) {
 
             // Update quantity
             if (isset($cart[$product_id])) {
-                // If adding to an existing item and no specific quantity provided, increment
-                if ($input['quantity'] == 1 && ! isset($input['replace'])) {
-                    $cart[$product_id] = (int) $cart[$product_id] + 1;
-                } else {
-                    // Otherwise set the exact quantity
+                // If 'replace' is explicitly set, override the quantity
+                if (isset($input['replace']) && $input['replace'] === true) {
                     $cart[$product_id] = $quantity;
+                } else {
+                    // Compare current quantity with requested one
+                    if ($quantity > $cart[$product_id]) {
+                        $cart[$product_id] += 1; // Increment by 1
+                    } elseif ($quantity < $cart[$product_id]) {
+                        $cart[$product_id] -= 1; // Decrement by 1
+                        if ($cart[$product_id] <= 0) {
+                            unset($cart[$product_id]); // Remove if it goes to 0
+                        }
+                    }
+                    // If equal, no change needed
                 }
             } else {
                 // New item
