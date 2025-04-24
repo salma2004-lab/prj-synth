@@ -5,8 +5,8 @@ $dbname   = 'elbaraka';
 $username = 'root';
 $password = '';
 
-$pdo = new mysqli($host, $username, $password, $dbname);
+$mysqli = new mysqli($host, $username, $password, $dbname);
 
-if ($pdo->connect_error) {
-    die("Connection failed: " . $pdo->connect_error);
+if ($mysqli->connect_error) {
+    die("Connection failed: " . $mysqli->connect_error);
 }

@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status           = $_POST['status'];
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO reservations (name, phone, email, guests, reservation_date, status) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $mysqli->prepare("INSERT INTO reservations (name, phone, email, guests, reservation_date, status) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$name, $phone, $email, $guests, $reservation_date, $status]);
         header('Location: reservations.php?status=added');
         exit;

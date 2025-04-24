@@ -11,9 +11,15 @@
 
     // Fetch all testimonials
     try {
-        $stmt         = $pdo->query("SELECT * FROM testimonials ORDER BY id DESC");
-        $testimonials = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
+        // Perform the query using mysqli
+        $stmt = $mysqli->query("SELECT * FROM testimonials ORDER BY id DESC");
+
+        // Fetch all testimonials using mysqli
+        $testimonials = [];
+        while ($row = $stmt->fetch_assoc()) {
+            $testimonials[] = $row;
+        }
+    } catch (Exception $e) {
         die("Erreur lors de la récupération des témoignages : " . $e->getMessage());
     }
 ?>

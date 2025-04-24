@@ -7,8 +7,12 @@
     require_once 'db.php'; // Include the database connection
 
     // Fetch all reservations
-    $stmt         = $pdo->query("SELECT * FROM reservations ORDER BY reservation_date DESC");
-    $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $result       = $mysqli->query("SELECT * FROM reservations ORDER BY reservation_date DESC");
+    $reservations = [];
+    while ($row = $result->fetch_assoc()) {
+        $reservations[] = $row;
+    }
+    $result->close();
 
     // Check for status messages from redirects
     $status_messages = [];

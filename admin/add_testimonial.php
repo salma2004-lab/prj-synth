@@ -33,7 +33,7 @@
 
         try {
             // Insert testimonial into the database
-            $stmt = $pdo->prepare("
+            $stmt = $mysqli->prepare("
             INSERT INTO testimonials (name, testimonial, image_url)
             VALUES (?, ?, ?)
         ");

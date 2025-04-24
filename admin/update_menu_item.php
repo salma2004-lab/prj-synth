@@ -1,74 +1,81 @@
 <?php
-session_start();
-if (! isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-require_once 'db.php';
+    session_start();
+    if (! isset($_SESSION['user_id'])) {
+        header('Location: login.php');
+        exit;
+    }
+    require_once 'db.php';
 
-$target_dir = '../images/menu/';
-if (! is_dir($target_dir)) {
-    mkdir($target_dir, 0755, true);
-}
-
-if (! isset($_GET['id'])) {
-    header('Location: menu_items.php');
-    exit;
-}
-$id = (int) $_GET['id'];
-
-$stmt = $pdo->prepare("SELECT * FROM menu_items WHERE id = ?");
-$stmt->execute([$id]);
-$item = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (! $item) {
-    header('Location: menu_items.php');
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name        = trim($_POST['name']);
-    $description = trim($_POST['description']);
-    $price       = floatval($_POST['price']);
-    $discount    = isset($_POST['discount']) ? floatval($_POST['discount']) : 0;
-    $category_id = (int) $_POST['category_id'];
-    $image_url   = $item['image_url']; // Default to current image
-
-    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-        $image_name  = basename($_FILES['image']['name']);
-        $target_file = $target_dir . $image_name;
-
-        $check = getimagesize($_FILES['image']['tmp_name']);
-        if ($check === false) {
-            die("The file is not a valid image.");
-        }
-
-        if ($_FILES['image']['size'] > 5242880) {
-            die("The file is too large. Please upload an image smaller than 5MB.");
-        }
-
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-            $image_url = $target_file;
-        } else {
-            die("Error uploading file. Check directory permissions.");
-        }
-
-        // Include image in the update
-        $stmt = $pdo->prepare("UPDATE menu_items SET name = ?, description = ?, price = ?, discount = ?, image_url = ?, category_id = ? WHERE id = ?");
-        $stmt->execute([$name, $description, $price, $discount, $image_url, $category_id, $id]);
-    } else {
-        // Do not change the image
-        $stmt = $pdo->prepare("UPDATE menu_items SET name = ?, description = ?, price = ?, discount = ?, category_id = ? WHERE id = ?");
-        $stmt->execute([$name, $description, $price, $discount, $category_id, $id]);
+    $target_dir = '../images/menu/';
+    if (! is_dir($target_dir)) {
+        mkdir($target_dir, 0755, true);
     }
 
-    header('Location: menu_items.php?status=updated');
-    exit;
-}
+    if (! isset($_GET['id'])) {
+        header('Location: menu_items.php');
+        exit;
+    }
+    $id = (int) $_GET['id'];
+
+    $stmt = $mysqli->prepare("SELECT * FROM menu_items WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $item   = $result->fetch_assoc();
+    $stmt->close();
+
+    if (! $item) {
+        header('Location: menu_items.php');
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $name        = trim($_POST['name']);
+        $description = trim($_POST['description']);
+        $price       = floatval($_POST['price']);
+        $discount    = isset($_POST['discount']) ? floatval($_POST['discount']) : 0;
+        $category_id = (int) $_POST['category_id'];
+        $image_url   = $item['image_url']; // Default to current image
+
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $image_name  = basename($_FILES['image']['name']);
+            $target_file = $target_dir . $image_name;
+
+            $check = getimagesize($_FILES['image']['tmp_name']);
+            if ($check === false) {
+                die("The file is not a valid image.");
+            }
+
+            if ($_FILES['image']['size'] > 5242880) {
+                die("The file is too large. Please upload an image smaller than 5MB.");
+            }
+
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
+                $image_url = $target_file;
+            } else {
+                die("Error uploading file. Check directory permissions.");
+            }
+
+            // Include image in the update
+            $stmt = $mysqli->prepare("UPDATE menu_items SET name = ?, description = ?, price = ?, discount = ?, image_url = ?, category_id = ? WHERE id = ?");
+            $stmt->bind_param("ssddsis", $name, $description, $price, $discount, $image_url, $category_id, $id);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            // Do not change the image
+            $stmt = $mysqli->prepare("UPDATE menu_items SET name = ?, description = ?, price = ?, discount = ?, category_id = ? WHERE id = ?");
+            $stmt->bind_param("ssddii", $name, $description, $price, $discount, $category_id, $id);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        header('Location: menu_items.php?status=updated');
+        exit;
+    }
 ?>
 <?php include_once 'includes/header.php'; ?>
 <div class="container mt-5">
-    <h2>Edit Menu Item: <?php echo htmlspecialchars($item['name']); ?></h2>
+    <h2>Edit Menu Item:                                               <?php echo htmlspecialchars($item['name']); ?></h2>
     <form method="POST" action="update_menu_item.php?id=<?php echo $id; ?>" enctype="multipart/form-data">
         <div class="form-group">
             <label for="name">Item Name</label>
@@ -90,9 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="category_id">Category</label>
             <select class="form-control" id="category_id" name="category_id" required>
                 <?php
-                    $stmt = $pdo->query("SELECT * FROM categories ORDER BY name");
-                    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($categories as $category): ?>
+                    $result     = $mysqli->query("SELECT * FROM categories ORDER BY name");
+                    $categories = [];
+                    while ($row = $result->fetch_assoc()) {
+                        $categories[] = $row;
+                    }
+                    $result->close();
+                foreach ($categories as $category): ?>
                     <option value="<?php echo $category['id']; ?>"<?php echo($category['id'] == $item['category_id']) ? ' selected' : ''; ?>>
                         <?php echo htmlspecialchars($category['name']); ?>
                     </option>

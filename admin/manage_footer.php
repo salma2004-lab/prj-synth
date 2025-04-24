@@ -11,8 +11,9 @@
 
     // Fetch existing footer settings
     try {
-        $stmt            = $pdo->query("SELECT * FROM footer ORDER BY id");
-        $footer = $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $mysqli->query("SELECT * FROM footer ORDER BY id");
+        $footer = $result->fetch_assoc();
+        $result->close();
 
         // If no settings exist, initialize empty values
         if (! $footer) {
@@ -27,7 +28,7 @@
                 'twitter'    => '',
             ];
         }
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         die("Erreur lors de la récupération des paramètres du pied de page : " . $e->getMessage());
     }
 
@@ -44,25 +45,31 @@
 
         try {
             // Check if settings already exist
-            $stmt = $pdo->prepare("SELECT id FROM footer");
+            $stmt = $mysqli->prepare("SELECT id FROM footer");
             $stmt->execute();
-            $existing_settings = $stmt->fetch(PDO::FETCH_ASSOC);
+            $result            = $stmt->get_result();
+            $existing_settings = $result->fetch_assoc();
+            $stmt->close();
 
             if ($existing_settings) {
                 // Update existing settings
-                $stmt = $pdo->prepare("
+                $stmt = $mysqli->prepare("
                 UPDATE footer
                 SET address = ?, phone = ?, email = ?, hours_days = ?, hours_time = ?, facebook = ?, instagram = ?, twitter = ?
                 WHERE id = ?
-            ");
-                $stmt->execute([$address, $phone, $email, $hours_days, $hours_time, $facebook, $instagram, $twitter, $existing_settings['id']]);
+                ");
+                $stmt->bind_param("ssssssssi", $address, $phone, $email, $hours_days, $hours_time, $facebook, $instagram, $twitter, $existing_settings['id']);
+                $stmt->execute();
+                $stmt->close();
             } else {
                 // Insert new settings
-                $stmt = $pdo->prepare("
+                $stmt = $mysqli->prepare("
                 INSERT INTO footer (address, phone, email, hours_days, hours_time, facebook, instagram, twitter)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-                $stmt->execute([$address, $phone, $email, $hours_days, $hours_time, $facebook, $instagram, $twitter]);
+                ");
+                $stmt->bind_param("ssssssss", $address, $phone, $email, $hours_days, $hours_time, $facebook, $instagram, $twitter);
+                $stmt->execute();
+                $stmt->close();
             }
 
             echo '<script>alert("Paramètres mis à jour avec succès.");</script>';

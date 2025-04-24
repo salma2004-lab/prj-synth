@@ -23,22 +23,29 @@
 
             try {
                 // Check if a promotion for this day_of_week already exists
-                $stmt = $pdo->prepare("SELECT id FROM promotions WHERE day_of_week = ?");
-                $stmt->execute([$day_of_week]);
-                $existing_promotion = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmt = $mysqli->prepare("SELECT id FROM promotions WHERE day_of_week = ?");
+                $stmt->bind_param("i", $day_of_week);
+                $stmt->execute();
+                $result             = $stmt->get_result();
+                $existing_promotion = $result->fetch_assoc();
+                $stmt->close();
 
                 if ($existing_promotion) {
                     // Delete the existing promotion for this day_of_week
-                    $stmt = $pdo->prepare("DELETE FROM promotions WHERE day_of_week = ?");
-                    $stmt->execute([$day_of_week]);
+                    $stmt = $mysqli->prepare("DELETE FROM promotions WHERE day_of_week = ?");
+                    $stmt->bind_param("i", $day_of_week);
+                    $stmt->execute();
+                    $stmt->close();
                 }
 
                 // Insert the new promotion
-                $stmt = $pdo->prepare("
+                $stmt = $mysqli->prepare("
                 INSERT INTO promotions (day_name, day_of_week, title, description, highlight_text)
                 VALUES (?, ?, ?, ?, ?)
-            ");
-                $stmt->execute([$day_name, $day_of_week, $title, $description, $highlight_text]);
+                ");
+                $stmt->bind_param("sisss", $day_name, $day_of_week, $title, $description, $highlight_text);
+                $stmt->execute();
+                $stmt->close();
 
                 echo '<script>alert("Promotion ajoutée avec succès.");</script>';
 
@@ -51,8 +58,10 @@
             $id = intval($_POST['id']);
 
             try {
-                $stmt = $pdo->prepare("DELETE FROM promotions WHERE id = ?");
-                $stmt->execute([$id]);
+                $stmt = $mysqli->prepare("DELETE FROM promotions WHERE id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $stmt->close();
 
                 // Optional: redirect to avoid resubmission on refresh
                 header("Location: promotions.php");
@@ -66,9 +75,13 @@
 
     // Fetch all promotions from the database
     try {
-        $stmt       = $pdo->query("SELECT * FROM promotions ORDER BY day_of_week");
-        $promotions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
+        $result     = $mysqli->query("SELECT * FROM promotions ORDER BY day_of_week");
+        $promotions = [];
+        while ($row = $result->fetch_assoc()) {
+            $promotions[] = $row;
+        }
+        $result->close();
+    } catch (Exception $e) {
         die("Erreur lors de la récupération des promotions : " . $e->getMessage());
     }
 ?>

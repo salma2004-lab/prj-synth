@@ -17,7 +17,7 @@
         if (empty($username) || empty($password)) {
             $errors[] = 'Nom d\'utilisateur et mot de passe sont requis.';
         } else {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+            $stmt = $mysqli->prepare("SELECT * FROM users WHERE username = ?");
             if ($stmt) {
                 $stmt->bind_param("s", $username);
                 $stmt->execute();
@@ -36,7 +36,7 @@
 
                 $stmt->close();
             } else {
-                $errors[] = 'Erreur de base de données: ' . $pdo->error;
+                $errors[] = 'Erreur de base de données: ' . $mysqli->error;
             }
         }
     }

@@ -6,19 +6,22 @@
         exit;
     }
 
-    require_once 'db.php';
+    require_once 'db.php'; // Include the pdo database connection
 
     $user_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
     try {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Fetch user details using pdo
+        $stmt = $mysqli->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->bind_param("i", $user_id); // Bind user_id as integer
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user   = $result->fetch_assoc();
 
         if (! $user) {
             die('<div class="alert alert-danger">Utilisateur introuvable.</div>');
         }
-    } catch (PDOException $e) {
+    } catch (mysqli_sql_exception $e) {
         die('<div class="alert alert-danger">Erreur lors de la récupération de l\'utilisateur : ' . $e->getMessage() . '</div>');
     }
 
@@ -34,12 +37,10 @@
                 echo '<div class="alert alert-danger">Le type d\'utilisateur n\'est pas valide.</div>';
             } else {
 
-                $stmt = $pdo->prepare("
-                UPDATE users
-                SET full_name = ?, type = ?
-                WHERE id = ?
-            ");
-                $stmt->execute([$full_name, $type, $user_id]);
+                // Update user details using pdo
+                $stmt = $mysqli->prepare("UPDATE users SET full_name = ?, type = ? WHERE id = ?");
+                $stmt->bind_param("ssi", $full_name, $type, $user_id); // Bind parameters (string, string, integer)
+                $stmt->execute();
 
                 echo '<script>alert("Utilisateur mis à jour avec succès.");</script>';
                 echo '<script>window.location.href = "manage_users.php";</script>';
@@ -72,8 +73,8 @@
                 <div class="mb-3">
                     <label for="type" class="form-label">Type *</label>
                     <select class="form-select" id="type" name="type" required>
-                        <option value="admin"                                                                                                                                                                                     <?php echo($user['type'] === 'admin') ? 'selected' : ''; ?>>Admin</option>
-                        <option value="limited"                                                                                                                                                                                             <?php echo($user['type'] === 'limited') ? 'selected' : ''; ?>>Limited</option>
+                        <option value="admin"                                                                                                                                                                                                                                                                               <?php echo($user['type'] === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                        <option value="limited"                                                                                                                                                                                                                                                                                           <?php echo($user['type'] === 'limited') ? 'selected' : ''; ?>>Limited</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">Enregistrer</button>

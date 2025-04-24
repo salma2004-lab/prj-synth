@@ -36,7 +36,7 @@
 
         try {
             // Insert the new about record into the database
-            $stmt = $pdo->prepare("
+            $stmt = $mysqli->prepare("
             INSERT INTO about (heading, description, image_url)
             VALUES (?, ?, ?)
         ");

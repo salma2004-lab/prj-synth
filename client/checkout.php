@@ -31,46 +31,57 @@
                 }
 
                 require_once 'db.php';
-               // Get cart items and total
-$cart_items = [];
-$cart_total = 0;
+                // Get cart items and total
+                $cart_items = [];
+                $cart_total = 0;
 
-// Prepare placeholders for SQL IN clause
-$placeholders = implode(',', array_fill(0, count(array_keys($cart_data)), '?'));
+                // Prepare placeholders for SQL IN clause
+                $placeholders = implode(',', array_fill(0, count(array_keys($cart_data)), '?'));
 
-if (! empty($placeholders)) {
-    $stmt = $pdo->prepare("
-        SELECT id, name, price, discount, image_url
-        FROM menu_items
-        WHERE id IN ($placeholders)
-    ");
-    $stmt->execute(array_keys($cart_data));
-    $menu_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                if (! empty($placeholders)) {
+                    $stmt = $mysqli->prepare("
+    SELECT id, name, price, discount, image_url
+    FROM menu_items
+    WHERE id IN ($placeholders)
+");
 
-    foreach ($menu_items as $item) {
-        // Calculate the discounted price
-        $discounted_price = $item['price'] - ($item['price'] * $item['discount'] / 100);
-        
-        // Get the quantity from the cart data
-        $quantity   = $cart_data[$item['id']];
-        
-        // Calculate the item total using the discounted price
-        $item_total = $discounted_price * $quantity;
-        
-        // Add to the cart total
-        $cart_total += $item_total;
+                // Dynamically bind parameters for mysqli
+                    $types = str_repeat('i', count(array_keys($cart_data))); // 'i' for integer type
+                    $stmt->bind_param($types, ...array_keys($cart_data));
 
-        // Add the item details to the cart items array
-        $cart_items[] = [
-            'id'         => $item['id'],
-            'name'       => $item['name'],
-            'price'      => $discounted_price,  // Using the discounted price
-            'quantity'   => $quantity,
-            'item_total' => $item_total,
-        ];
-    }
-}
+                // Execute the query
+                    $stmt->execute();
 
+                // Fetch all rows using mysqli
+                    $result     = $stmt->get_result();
+                    $menu_items = [];
+                    while ($row = $result->fetch_assoc()) {
+                        $menu_items[] = $row;
+                    }
+
+                    foreach ($menu_items as $item) {
+                        // Calculate the discounted price
+                        $discounted_price = $item['price'] - ($item['price'] * $item['discount'] / 100);
+
+                        // Get the quantity from the cart data
+                        $quantity = $cart_data[$item['id']];
+
+                        // Calculate the item total using the discounted price
+                        $item_total = $discounted_price * $quantity;
+
+                        // Add to the cart total
+                        $cart_total += $item_total;
+
+                        // Add the item details to the cart items array
+                        $cart_items[] = [
+                            'id'         => $item['id'],
+                            'name'       => $item['name'],
+                            'price'      => $discounted_price, // Using the discounted price
+                            'quantity'   => $quantity,
+                            'item_total' => $item_total,
+                        ];
+                    }
+                }
 
                 // Calculate delivery fee
                 $delivery_fee        = ($cart_total > 100) ? 0 : 20;
@@ -113,10 +124,10 @@ if (! empty($placeholders)) {
                             $order_id = 'ORD-' . time() . '-' . rand(1000, 9999);
 
                             // Start transaction
-                            $pdo->beginTransaction();
+                            $mysqli->beginTransaction();
 
                             // Insert order into orders table
-                            $stmt = $pdo->prepare("
+                            $stmt = $mysqli->prepare("
                             INSERT INTO orders (
                                 order_id, full_name, id_card, phone, email, address, notes,
                                 subtotal, delivery_fee, total, status, order_date
@@ -138,10 +149,10 @@ if (! empty($placeholders)) {
                                 $total_with_delivery,
                             ]);
 
-                            $order_db_id = $pdo->lastInsertId();
+                            $order_db_id = $mysqli->lastInsertId();
 
                             // Insert order items
-                            $stmt = $pdo->prepare("
+                            $stmt = $mysqli->prepare("
                             INSERT INTO order_items (
                                 order_id, product_id, product_name, price, quantity, total
                             ) VALUES (?, ?, ?, ?, ?, ?)
@@ -159,7 +170,7 @@ if (! empty($placeholders)) {
                             }
 
                             // Commit transaction
-                            $pdo->commit();
+                            $mysqli->commit();
 
                             // Clear cart
                             setcookie('cart', '', time() - 3600, '/');
@@ -169,7 +180,7 @@ if (! empty($placeholders)) {
                             exit;
 
                         } catch (Exception $e) {
-                            $pdo->rollBack();
+                            $mysqli->rollBack();
                             $errors[] = "Une erreur s'est produite lors de l'enregistrement de votre commande. Veuillez réessayer.";
                         }
                     }
