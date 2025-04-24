@@ -45,14 +45,14 @@
     WHERE id IN ($placeholders)
 ");
 
-                // Dynamically bind parameters for mysqli
+                                                                             // Dynamically bind parameters for mysqli
                     $types = str_repeat('i', count(array_keys($cart_data))); // 'i' for integer type
                     $stmt->bind_param($types, ...array_keys($cart_data));
 
-                // Execute the query
+                    // Execute the query
                     $stmt->execute();
 
-                // Fetch all rows using mysqli
+                    // Fetch all rows using mysqli
                     $result     = $stmt->get_result();
                     $menu_items = [];
                     while ($row = $result->fetch_assoc()) {
@@ -120,23 +120,27 @@
                     // If no errors, save order to database
                     if (empty($errors)) {
                         try {
-                            // Generate unique order ID (current timestamp + random number)
+                            // Generate unique order ID
                             $order_id = 'ORD-' . time() . '-' . rand(1000, 9999);
 
                             // Start transaction
-                            $mysqli->beginTransaction();
+                            $mysqli->begin_transaction();
 
                             // Insert order into orders table
                             $stmt = $mysqli->prepare("
-                            INSERT INTO orders (
-                                order_id, full_name, id_card, phone, email, address, notes,
-                                subtotal, delivery_fee, total, status, order_date
-                            ) VALUES (
-                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW()
-                            )
-                        ");
+            INSERT INTO orders (
+                order_id, full_name, id_card, phone, email, address, notes,
+                subtotal, delivery_fee, total, status, order_date
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW()
+            )
+        ");
+                            if (! $stmt) {
+                                throw new Exception("Erreur de préparation de la requête (orders): " . $mysqli->error);
+                            }
 
-                            $stmt->execute([
+                            $stmt->bind_param(
+                                "sssssssddd",
                                 $order_id,
                                 $form_data['full_name'],
                                 $form_data['id_card'],
@@ -146,27 +150,34 @@
                                 $form_data['notes'],
                                 $cart_total,
                                 $delivery_fee,
-                                $total_with_delivery,
-                            ]);
+                                $total_with_delivery
+                            );
 
-                            $order_db_id = $mysqli->lastInsertId();
+                            $stmt->execute();
+
+                            $order_db_id = $mysqli->insert_id;
 
                             // Insert order items
                             $stmt = $mysqli->prepare("
-                            INSERT INTO order_items (
-                                order_id, product_id, product_name, price, quantity, total
-                            ) VALUES (?, ?, ?, ?, ?, ?)
-                        ");
+            INSERT INTO order_items (
+                order_id, product_id, product_name, price, quantity, total
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        ");
+                            if (! $stmt) {
+                                throw new Exception("Erreur de préparation de la requête (order_items): " . $mysqli->error);
+                            }
 
                             foreach ($cart_items as $item) {
-                                $stmt->execute([
+                                $stmt->bind_param(
+                                    "iisddd",
                                     $order_db_id,
                                     $item['id'],
                                     $item['name'],
                                     $item['price'],
                                     $item['quantity'],
-                                    $item['item_total'],
-                                ]);
+                                    $item['item_total']
+                                );
+                                $stmt->execute();
                             }
 
                             // Commit transaction
@@ -178,12 +189,14 @@
                             // Redirect to confirmation page
                             header("Location: order_confirmation.php?order_id=" . urlencode($order_id));
                             exit;
-
                         } catch (Exception $e) {
-                            $mysqli->rollBack();
+                            $mysqli->rollback();
                             $errors[] = "Une erreur s'est produite lors de l'enregistrement de votre commande. Veuillez réessayer.";
+                            // Optionally log the error for debugging
+                            error_log($e->getMessage());
                         }
                     }
+
                 }
             ?>
 

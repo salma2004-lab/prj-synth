@@ -66,7 +66,7 @@
                             // Sanitize category name for use in HTML classes
                             $sanitizedCategoryName = strtolower(str_replace(' ', '-', $item['category_name'] ?? 'uncategorized'));
                         ?>
-		                        <div class="col-sm-6 col-lg-4 all<?php echo htmlspecialchars($sanitizedCategoryName); ?>">
+		                        <div class="col-sm-6 col-lg-4 all <?php echo htmlspecialchars($sanitizedCategoryName); ?>">
 		                            <div class="box" data-id="<?php echo htmlspecialchars($item['id']); ?>">
 		                                <div>
 		                                    <div class="img-box">
