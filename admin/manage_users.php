@@ -10,11 +10,26 @@
     require_once 'db.php'; // Include database connection
 
     // Fetch all users from the database
+    $users = [];
+
     try {
-        $stmt  = $pdo->query("SELECT * FROM users ORDER BY id DESC");
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        die("Erreur lors de la récupération des utilisateurs : " . $e->getMessage());
+        $query  = "SELECT * FROM users ORDER BY id DESC";
+        $result = $mysqli->query($query);
+
+        if ($result) {
+            $users = $result->fetch_all(MYSQLI_ASSOC);
+
+            // If no users are found
+            if (empty($users)) {
+                echo '<script>alert("Aucun utilisateur trouvé.");</script>';
+            }
+        } else {
+            throw new Exception('Erreur lors de la récupération des utilisateurs.');
+        }
+    } catch (Exception $e) {
+        // If there is an error fetching users
+        echo '<script>alert("Erreur : ' . htmlspecialchars($e->getMessage()) . '");</script>';
+        exit;
     }
 ?>
 

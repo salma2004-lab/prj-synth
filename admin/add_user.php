@@ -23,7 +23,7 @@
 
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-                $stmt = $pdo->prepare("
+                $stmt = $mysqli->prepare("
                 INSERT INTO users (username, password, type, full_name)
                 VALUES (?, ?, ?, ?)
             ");

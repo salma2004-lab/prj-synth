@@ -1,12 +1,11 @@
 <?php
     session_start();
 
-    // comment mn hna ila bghit n9ad user fash tkun table users khawya
+    // Redirect if not logged in as an admin
     if (! isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
         header('Location: login.php');
         exit;
     }
-    // tal hna
 
     require_once 'db.php';
 
@@ -14,11 +13,11 @@
     $success = false;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $full_name        = $_POST['full_name'] ?? '';
-        $username         = $_POST['username'] ?? '';
+        $full_name        = trim($_POST['full_name'] ?? '');
+        $username         = trim($_POST['username'] ?? '');
         $password         = $_POST['password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
-        $type             = $_POST['type'] ?? 'admin';
+        $type             = trim($_POST['type'] ?? 'admin');
 
         // Validate full name
         if (empty($full_name)) {
@@ -30,10 +29,12 @@
             $errors[] = "Le nom d'utilisateur est requis.";
         } else {
             // Check if username already exists
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->execute([$username]);
-            $existing_user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($existing_user) {
+            $stmt = $mysqli->prepare("SELECT * FROM users WHERE username = ?");
+            $stmt->bind_param('s', $username);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
                 $errors[] = "Ce nom d'utilisateur est déjà utilisé.";
             }
         }
@@ -57,22 +58,26 @@
             $errors[] = "Type d'utilisateur invalide.";
         }
 
-        // If no errors, save user to database
+        // If no errors, save user to the database
         if (empty($errors)) {
             try {
                 // Hash the password
                 $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
                 // Insert user into users table
-                $stmt = $pdo->prepare("
+                $stmt = $mysqli->prepare("
                 INSERT INTO users (full_name, username, password, type, created_at)
                 VALUES (?, ?, ?, ?, NOW())
             ");
-                $stmt->execute([$full_name, $username, $hashed_password, $type]);
+                $stmt->bind_param('ssss', $full_name, $username, $hashed_password, $type);
 
-                $success = true;
+                if ($stmt->execute()) {
+                    $success = true;
+                } else {
+                    $errors[] = "Une erreur s'est produite lors de l'enregistrement de votre compte. Veuillez réessayer.";
+                }
             } catch (Exception $e) {
-                $errors[] = "Une erreur s'est produite lors de l'enregistrement de votre compte. Veuillez réessayer.";
+                $errors[] = "Une erreur s'est produite : " . $e->getMessage();
             }
         }
     }
@@ -119,7 +124,7 @@
                             </div>
                             <div class="form-group mb-3">
                                 <label for="username">Nom d'utilisateur *</label>
-                                <input type="text" class="form-control" id="username" name="username" required>
+                                <input type="text" class="form-control" id="username" name="username"  required>
                             </div>
                             <div class="form-group mb-3">
                                 <label for="password">Mot de passe *</label>
@@ -132,8 +137,8 @@
                             <div class="form-group mb-3">
                                 <label for="type">Type d'utilisateur</label>
                                 <select class="form-select" id="type" name="type">
-                                    <option value="admin">Admin</option>
-                                    <option value="limited">Limité</option>
+                                    <option value="admin"                                                          <?php echo($type === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                                    <option value="limited"                                                            <?php echo($type === 'limited') ? 'selected' : ''; ?>>Limité</option>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-success btn-block w-100">Créer l'utilisateur</button>

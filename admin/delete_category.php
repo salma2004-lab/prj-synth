@@ -10,10 +10,16 @@
 
     $category_id = (int) $_GET['id']; // Get the category ID from the URL
 
-    // Fetch the category to check if it exists
-    $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = ?");
-    $stmt->execute([$category_id]);
-    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $mysqli->prepare("SELECT * FROM categories WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $category_id);
+        $stmt->execute();
+        $result   = $stmt->get_result();
+        $category = $result->fetch_assoc();
+        $stmt->close();
+    } else {
+        die("Erreur lors de la récupération de la catégorie : " . $mysqli->error);
+    }
 
     if (! $category) {
         // If category does not exist, redirect to manage categories
@@ -21,10 +27,18 @@
         exit;
     }
 
-    // Check if there are any menu items associated with the category
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM menu_items WHERE category_id = ?");
-    $stmt->execute([$category_id]);
-    $menu_item_count = $stmt->fetchColumn();
+    $menu_item_count = 0;
+    $stmt            = $mysqli->prepare("SELECT COUNT(*) as count FROM menu_items WHERE category_id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $category_id);
+        $stmt->execute();
+        $result          = $stmt->get_result();
+        $row             = $result->fetch_assoc();
+        $menu_item_count = $row['count'];
+        $stmt->close();
+    } else {
+        die("Erreur lors de la vérification des éléments de menu : " . $mysqli->error);
+    }
 
     $errors  = [];
     $success = false;
@@ -32,21 +46,30 @@
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Force delete the category and all associated menu items
         if ($menu_item_count > 0) {
-            // Delete all associated menu items first
-            $stmt = $pdo->prepare("DELETE FROM menu_items WHERE category_id = ?");
-            $stmt->execute([$category_id]);
+            // Delete all associated menu items
+            $stmt = $mysqli->prepare("DELETE FROM menu_items WHERE category_id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $category_id);
+                $stmt->execute();
+                $stmt->close();
+            }
 
-            // Now delete the category
-            $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
-            $stmt->execute([$category_id]);
-
-            $success = true;
+            // Delete the category
+            $stmt = $mysqli->prepare("DELETE FROM categories WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $category_id);
+                $stmt->execute();
+                $stmt->close();
+                $success = true;
+            }
         } else {
-            // Just delete the category if no menu items are present
-            $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
-            $stmt->execute([$category_id]);
-
-            $success = true;
+            $stmt = $mysqli->prepare("DELETE FROM categories WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param("i", $category_id);
+                $stmt->execute();
+                $stmt->close();
+                $success = true;
+            }
         }
     }
 ?>

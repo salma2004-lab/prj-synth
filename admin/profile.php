@@ -12,9 +12,12 @@
 
     // Get user data
     try {
-        $stmt = $pdo->prepare("SELECT username, full_name, type FROM users WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $mysqli->prepare("SELECT username, full_name, type FROM users WHERE id = ?");
+        $stmt->bind_param("i", $_SESSION['user_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user   = $result->fetch_assoc();
+        $stmt->close();
 
         if (! $user) {
             $error = 'Utilisateur non trouvé.';
@@ -33,13 +36,17 @@
             $error = "Le nom ne peut pas être vide";
         } else {
             try {
-                $stmt = $pdo->prepare("UPDATE users SET full_name = ? WHERE id = ?");
-                if ($stmt->execute([$full_name, $_SESSION['user_id']])) {
+                $stmt = $mysqli->prepare("UPDATE users SET full_name = ? WHERE id = ?");
+                $stmt->bind_param("si", $full_name, $_SESSION['user_id']);
+
+                if ($stmt->execute()) {
                     $message           = "Profil mis à jour avec succès !";
                     $user['full_name'] = $full_name;
                 } else {
                     $error = "Erreur lors de la mise à jour du profil";
                 }
+
+                $stmt->close();
             } catch (Exception $e) {
                 $error = "Erreur: " . htmlspecialchars($e->getMessage());
             }
@@ -61,20 +68,26 @@
         } else {
             try {
                 // Verify current password
-                $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
-                $stmt->execute([$_SESSION['user_id']]);
-                $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmt = $mysqli->prepare("SELECT password FROM users WHERE id = ?");
+                $stmt->bind_param("i", $_SESSION['user_id']);
+                $stmt->execute();
+                $result    = $stmt->get_result();
+                $user_data = $result->fetch_assoc();
+                $stmt->close();
 
                 if (password_verify($current_password, $user_data['password'])) {
                     // Update password
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmt            = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $stmt            = $mysqli->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $stmt->bind_param("si", $hashed_password, $_SESSION['user_id']);
 
-                    if ($stmt->execute([$hashed_password, $_SESSION['user_id']])) {
+                    if ($stmt->execute()) {
                         $message = "Mot de passe changé avec succès !";
                     } else {
                         $error = "Erreur lors du changement de mot de passe";
                     }
+
+                    $stmt->close();
                 } else {
                     $error = "Le mot de passe actuel est incorrect";
                 }

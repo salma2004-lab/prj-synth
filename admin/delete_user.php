@@ -19,9 +19,11 @@ $user_id = intval($_POST['id']); // Sanitize the user ID
 
 try {
     // Fetch the user to ensure it exists
-    $stmt = $pdo->prepare("SELECT id, username FROM users WHERE id = ?");
-    $stmt->execute([$user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $mysqli->prepare("SELECT id, username FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id); // Bind the user_id parameter
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user   = $result->fetch_assoc();
 
     if (! $user) {
         echo '<script>alert("Utilisateur introuvable."); window.location.href = "manage_users.php";</script>';
@@ -35,8 +37,9 @@ try {
     }
 
     // Delete the user
-    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->execute([$user_id]);
+    $stmt = $mysqli->prepare("DELETE FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user_id); // Bind the user_id parameter
+    $stmt->execute();
 
     // Notify success
     echo '<script>alert("Utilisateur supprimé avec succès."); window.location.href = "manage_users.php";</script>';

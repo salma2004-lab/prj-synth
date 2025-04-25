@@ -1,11 +1,15 @@
 <?php
     session_start();
+
+    // Redirect if no user is logged in
     if (! isset($_SESSION['user_id'])) {
         header('Location: login.php');
         exit;
     }
-    require_once 'db.php';
 
+    require_once 'db.php'; // Include your database connection
+
+    // Handle form submission
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id               = (int) $_POST['id'];
         $name             = trim($_POST['name']);
@@ -15,13 +19,14 @@
         $reservation_date = $_POST['reservation_date'];
         $status           = $_POST['status'];
 
-        try {
-            $stmt = $pdo->prepare("UPDATE reservations SET name = ?, phone = ?, email = ?, guests = ?, reservation_date = ?, status = ? WHERE id = ?");
-            $stmt->execute([$name, $phone, $email, $guests, $reservation_date, $status, $id]);
+        $stmt = $mysqli->prepare("UPDATE reservations SET name = ?, phone = ?, email = ?, guests = ?, reservation_date = ?, status = ? WHERE id = ?");
+        $stmt->bind_param('sssssss', $name, $phone, $email, $guests, $reservation_date, $status, $id);
+
+        if ($stmt->execute()) {
             header('Location: reservations.php?status=updated');
             exit;
-        } catch (PDOException $e) {
-            error_log("Error updating reservation: " . $e->getMessage());
+        } else {
+            error_log("Error updating reservation: " . $stmt->error);
             header('Location: reservations.php?status=error');
             exit;
         }
@@ -29,15 +34,19 @@
 
     // Fetch reservation details for editing
     if (isset($_GET['id'])) {
-        $id   = (int) $_GET['id'];
-        $stmt = $pdo->prepare("SELECT * FROM reservations WHERE id = ?");
-        $stmt->execute([$id]);
-        $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
+        $id = (int) $_GET['id'];
 
-        if (! $reservation) {
+        $stmt = $mysqli->prepare("SELECT * FROM reservations WHERE id = ?");
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
             header('Location: reservations.php');
             exit;
         }
+
+        $reservation = $result->fetch_assoc();
     } else {
         header('Location: reservations.php');
         exit;
@@ -47,7 +56,7 @@
 <div class="container mt-5">
     <h2>Edit Reservation</h2>
     <form method="POST" action="update_reservation.php">
-        <input type="hidden" name="id" value="<?php echo $reservation['id']; ?>">
+        <input type="hidden" name="id" value="<?php echo htmlspecialchars($reservation['id']); ?>">
         <div class="form-group">
             <label for="name">Name</label>
             <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($reservation['name']); ?>" required>

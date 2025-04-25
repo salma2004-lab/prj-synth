@@ -19,39 +19,53 @@
     $id = (int) $_GET['id'];
 
     // Get current category
-    $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = ?");
-    $stmt->execute([$id]);
-    $category = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $mysqli->prepare("SELECT * FROM categories WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result   = $stmt->get_result();
+        $category = $result->fetch_assoc();
+        $stmt->close();
 
-    if (! $category) {
-        header('Location: categories.php');
-        exit;
-    }
+        if (! $category) {
+            header('Location: categories.php');
+            exit;
+        }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $name = $_POST['name'] ?? '';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = $_POST['name'] ?? '';
 
-        if (empty($name)) {
-            $errors[] = 'Le nom de la catégorie est requis.';
-        } else {
-            // Check for duplicate (excluding current category)
-            $stmt = $pdo->prepare("SELECT * FROM categories WHERE name = ? AND id != ?");
-            $stmt->execute([$name, $id]);
-            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($existing) {
-                $errors[] = 'Une autre catégorie porte déjà ce nom.';
+            if (empty($name)) {
+                $errors[] = 'Le nom de la catégorie est requis.';
             } else {
-                // Update
-                try {
-                    $stmt = $pdo->prepare("UPDATE categories SET name = ? WHERE id = ?");
-                    $stmt->execute([$name, $id]);
-                    $success = true;
+                // Check for duplicate (excluding current category)
+                $stmt = $mysqli->prepare("SELECT * FROM categories WHERE name = ? AND id != ?");
+                if ($stmt) {
+                    $stmt->bind_param("si", $name, $id);
+                    $stmt->execute();
+                    $result   = $stmt->get_result();
+                    $existing = $result->fetch_assoc();
+                    $stmt->close();
 
-                    // Refresh category data
-                    $category['name'] = $name;
-                } catch (Exception $e) {
-                    $errors[] = "Une erreur est survenue lors de la mise à jour.";
+                    if ($existing) {
+                        $errors[] = 'Une autre catégorie porte déjà ce nom.';
+                    } else {
+                        // Update
+                        try {
+                            $stmt = $mysqli->prepare("UPDATE categories SET name = ? WHERE id = ?");
+                            if ($stmt) {
+                                $stmt->bind_param("si", $name, $id);
+                                $stmt->execute();
+                                $stmt->close();
+                                $success = true;
+
+                                // Refresh category data
+                                $category['name'] = $name;
+                            }
+                        } catch (Exception $e) {
+                            $errors[] = "Une erreur est survenue lors de la mise à jour.";
+                        }
+                    }
                 }
             }
         }

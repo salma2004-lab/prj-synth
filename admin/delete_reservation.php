@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int) $_POST['id'];
 
     try {
-        $stmt = $pdo->prepare("DELETE FROM reservations WHERE id = ?");
+        $stmt = $mysqli->prepare("DELETE FROM reservations WHERE id = ?");
         $stmt->execute([$id]);
         header('Location: reservations.php?status=deleted');
         exit;

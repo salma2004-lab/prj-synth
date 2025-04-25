@@ -9,11 +9,16 @@
     require_once 'db.php';
 
     // Fetch categories
-    $stmt       = $pdo->query("SELECT * FROM categories ORDER BY created_at DESC");
-    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $categories = [];
+    $result     = $mysqli->query("SELECT * FROM categories ORDER BY created_at DESC");
+
+    if ($result) {
+        $categories = $result->fetch_all(MYSQLI_ASSOC);
+    }
 
     include 'add_category.php';
 ?>
+
 <?php include_once 'includes/header.php'; ?>
     <div class="container mt-5">
         <h2 class="text-center mb-4">Gérer Catégories</h2>
@@ -24,11 +29,6 @@
                         <li><?php echo htmlspecialchars($error); ?></li>
                     <?php endforeach; ?>
                 </ul>
-            </div>
-        <?php endif; ?>
-<?php if (isset ($success)): ?>
-            <div class="alert alert-success">
-                Catégorie ajoutée avec succès.
             </div>
         <?php endif; ?>
         <div class="card mb-4">

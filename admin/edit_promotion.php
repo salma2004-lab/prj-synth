@@ -1,53 +1,58 @@
 <?php
-session_start();
+    session_start();
 
-// Redirect to login page if user is not logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
-require_once 'db.php'; // Include database connection
-
-// Fetch promotion data based on ID
-$promotion_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-if ($promotion_id > 0) {
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM promotions WHERE id = ?");
-        $stmt->execute([$promotion_id]);
-        $promotion = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$promotion) {
-            die("Promotion introuvable.");
-        }
-    } catch (PDOException $e) {
-        die("Erreur lors de la récupération de la promotion : " . $e->getMessage());
+    // Redirect to login page if user is not logged in
+    if (! isset($_SESSION['user_id'])) {
+        header('Location: login.php');
+        exit;
     }
-} else {
-    die("ID de promotion invalide.");
-}
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title          = trim($_POST['title']);
-    $description    = trim($_POST['description']);
-    $highlight_text = trim($_POST['highlight_text']);
+    require_once 'db.php'; // Include database connection
 
-    try {
-        // Update only the title, description, and highlight_text
-        $stmt = $pdo->prepare("
+    // Fetch promotion data based on ID
+    $promotion_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    if ($promotion_id > 0) {
+        try {
+            // Use MySQLi prepared statements
+            $stmt = $mysqli->prepare("SELECT * FROM promotions WHERE id = ?");
+            $stmt->bind_param("i", $promotion_id); // "i" for integer
+            $stmt->execute();
+            $result    = $stmt->get_result();
+            $promotion = $result->fetch_assoc();
+
+            if (! $promotion) {
+                die("Promotion introuvable.");
+            }
+        } catch (mysqli_sql_exception $e) {
+            die("Erreur lors de la récupération de la promotion : " . $e->getMessage());
+        }
+    } else {
+        die("ID de promotion invalide.");
+    }
+
+    // Handle form submission
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $title          = trim($_POST['title']);
+        $description    = trim($_POST['description']);
+        $highlight_text = trim($_POST['highlight_text']);
+
+        try {
+            // Update only the title, description, and highlight_text using MySQLi
+            $stmt = $mysqli->prepare("
             UPDATE promotions
             SET title = ?, description = ?, highlight_text = ?
             WHERE id = ?
         ");
-        $stmt->execute([$title, $description, $highlight_text, $promotion_id]);
-        echo '<script>alert("Promotion mise à jour avec succès.");</script>';
-        echo '<script>window.location.href = "promotions.php";</script>';
-        exit;
-    } catch (Exception $e) {
-        echo '<div class="alert alert-danger">Erreur lors de la mise à jour de la promotion : ' . htmlspecialchars($e->getMessage()) . '</div>';
+            $stmt->bind_param("sssi", $title, $description, $highlight_text, $promotion_id); // "s" for strings and "i" for integer
+            $stmt->execute();
+
+            echo '<script>alert("Promotion mise à jour avec succès.");</script>';
+            echo '<script>window.location.href = "promotions.php";</script>';
+            exit;
+        } catch (Exception $e) {
+            echo '<div class="alert alert-danger">Erreur lors de la mise à jour de la promotion : ' . htmlspecialchars($e->getMessage()) . '</div>';
+        }
     }
-}
 ?>
 
 <?php include_once 'includes/header.php'; ?>

@@ -10,8 +10,12 @@
     require_once 'db.php'; // Include the database connection
 
     // Fetch all orders
-    $stmt   = $pdo->query("SELECT * FROM orders ORDER BY order_date DESC");
-    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $result = $mysqli->query("SELECT * FROM orders ORDER BY order_date DESC");
+    $orders = [];
+    while ($row = $result->fetch_assoc()) {
+        $orders[] = $row;
+    }
+    $result->close();
 
     // Update order status logic
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id']) && isset($_POST['status'])) {
@@ -19,9 +23,12 @@
         $status   = $_POST['status'];
 
         // Fetch the current status of the order
-        $stmt = $pdo->prepare("SELECT status FROM orders WHERE id = ?");
-        $stmt->execute([$order_id]);
-        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $mysqli->prepare("SELECT status FROM orders WHERE id = ?");
+        $stmt->bind_param("i", $order_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $order  = $result->fetch_assoc();
+        $stmt->close();
 
         if ($order) {
             $current_status = $order['status'];
@@ -29,16 +36,24 @@
             // Allow status change from pending to any status or confirmed to delivered/cancelled
             if ($current_status === 'pending' || $current_status === 'confirmed') {
                 // Update the order status
-                $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
-                $stmt->execute([$status, $order_id]);
+                $stmt = $mysqli->prepare("UPDATE orders SET status = ? WHERE id = ?");
+                $stmt->bind_param("si", $status, $order_id);
+                $stmt->execute();
+                $stmt->close();
 
                 // Fetch all items in this order
-                $stmt = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
-                $stmt->execute([$order_id]);
-                $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $stmt = $mysqli->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
+                $stmt->bind_param("i", $order_id);
+                $stmt->execute();
+                $result      = $stmt->get_result();
+                $order_items = [];
+                while ($row = $result->fetch_assoc()) {
+                    $order_items[] = $row;
+                }
+                $stmt->close();
 
                 // Begin a transaction to ensure all updates happen atomically
-                $pdo->beginTransaction();
+                $mysqli->begin_transaction();
 
                 try {
                     // If changing to confirmed, increment sales count
@@ -48,8 +63,10 @@
                             $quantity   = $item['quantity'];
 
                             // Increment the sales count
-                            $stmt = $pdo->prepare("UPDATE menu_items SET sales_count = sales_count + ? WHERE id = ?");
-                            $stmt->execute([$quantity, $product_id]);
+                            $stmt = $mysqli->prepare("UPDATE menu_items SET sales_count = sales_count + ? WHERE id = ?");
+                            $stmt->bind_param("ii", $quantity, $product_id);
+                            $stmt->execute();
+                            $stmt->close();
                         }
                     }
                     // If changing to cancelled, decrement sales count (only if coming from confirmed)
@@ -59,17 +76,19 @@
                             $quantity   = $item['quantity'];
 
                             // Decrement the sales count, but don't go below zero
-                            $stmt = $pdo->prepare("UPDATE `menu_items` SET sales_count = GREATEST(sales_count - ?, 0) WHERE id = ?");
-                            $stmt->execute([$quantity, $product_id]);
+                            $stmt = $mysqli->prepare("UPDATE `menu_items` SET sales_count = GREATEST(sales_count - ?, 0) WHERE id = ?");
+                            $stmt->bind_param("ii", $quantity, $product_id);
+                            $stmt->execute();
+                            $stmt->close();
                         }
                     }
                     // If changing to delivered from confirmed, no change in sales count needed
-                    
+
                     // Commit the transaction after all updates are done
-                    $pdo->commit();
+                    $mysqli->commit();
                 } catch (Exception $e) {
                     // If any error occurs, rollback the transaction
-                    $pdo->rollBack();
+                    $mysqli->rollback();
                     // Optionally, log the error or handle it as needed
                     echo "Failed to update sales count: " . $e->getMessage();
                 }
@@ -148,10 +167,10 @@
                                     <form method="POST" action="orders.php" class="d-inline">
                                         <input type="hidden" name="order_id" value="<?php echo htmlspecialchars($order['id']); ?>">
                                         <select name="status" class="form-control form-control-sm" style="width: 150px;">
-                                            <option value="pending"                                                                                                                                                                                                                                                                             <?php echo($order['status'] == 'pending') ? 'selected' : ''; ?>>En attente</option>
-                                            <option value="confirmed"                                                                                                                                                                                                                                                                                     <?php echo($order['status'] == 'confirmed') ? 'selected' : ''; ?>>Confirmée</option>
-                                            <option value="delivered"                                                                                                                                                                                                                                                                                     <?php echo($order['status'] == 'delivered') ? 'selected' : ''; ?>>Livrée</option>
-                                            <option value="cancelled"                                                                                                                                                                                                                                                                                     <?php echo($order['status'] == 'cancelled') ? 'selected' : ''; ?>>Annulée</option>
+                                            <option value="pending"                                                                                                                                                                                                                                                                                                                                                                                                                   <?php echo($order['status'] == 'pending') ? 'selected' : ''; ?>>En attente</option>
+                                            <option value="confirmed"                                                                                                                                                                                                                                                                                                                                                                                                                               <?php echo($order['status'] == 'confirmed') ? 'selected' : ''; ?>>Confirmée</option>
+                                            <option value="delivered"                                                                                                                                                                                                                                                                                                                                                                                                                               <?php echo($order['status'] == 'delivered') ? 'selected' : ''; ?>>Livrée</option>
+                                            <option value="cancelled"                                                                                                                                                                                                                                                                                                                                                                                                                               <?php echo($order['status'] == 'cancelled') ? 'selected' : ''; ?>>Annulée</option>
                                         </select>
                                         <button type="submit" class="btn btn-sm btn-success mt-2">Mettre à jour</button>
                                     </form>

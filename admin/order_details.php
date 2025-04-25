@@ -17,9 +17,11 @@
 
                                    // Fetch order details
     $order_id = (int) $_GET['id']; // Get the order id from the URL
-    $stmt     = $pdo->prepare("SELECT * FROM orders WHERE id = ?");
-    $stmt->execute([$order_id]);
-    $order = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt     = $mysqli->prepare("SELECT * FROM orders WHERE id = ?");
+    $stmt->bind_param("i", $order_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $order  = $result->fetch_assoc();
 
     if (! $order) {
         echo "Order not found!";
@@ -27,10 +29,15 @@
     }
 
     // Fetch order items
-    $stmt = $pdo->prepare("SELECT oi.*, mi.name AS product_name, mi.price FROM order_items oi
+    $stmt = $mysqli->prepare("SELECT oi.*, mi.name AS product_name, mi.price FROM order_items oi
                        JOIN menu_items mi ON oi.product_id = mi.id WHERE oi.order_id = ?");
-    $stmt->execute([$order_id]);
-    $order_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->bind_param("i", $order_id);
+    $stmt->execute();
+    $result      = $stmt->get_result();
+    $order_items = [];
+    while ($row = $result->fetch_assoc()) {
+        $order_items[] = $row;
+    }
 ?>
 
 <?php include_once 'includes/header.php'; ?>

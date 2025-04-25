@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO menu_items (name, description, price, discount, image_url, category_id) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $mysqli->prepare("INSERT INTO menu_items (name, description, price, discount, image_url, category_id) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$name, $description, $price, $discount, $image_url, $category_id]);
         header('Location: menu_items.php?status=added');
         exit;
