@@ -2,12 +2,7 @@
 session_start();
 
 if (isset($_SESSION['user_id'])) {
-    // Redirect logged-in users to the appropriate page based on their type
-    if ($_SESSION['user_type'] === 'admin') {
-        header('Location: dashboard.php');
-    } else {
-        header('Location: dashboard.php');
-    }
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -22,28 +17,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username) || empty($password)) {
         $errors[] = 'Nom d\'utilisateur et mot de passe sont requis.';
     } else {
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->execute([$username]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $mysqli->prepare("SELECT * FROM users WHERE username = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $username);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user   = $result->fetch_assoc();
 
             if ($user && password_verify($password, $user['password'])) {
-                // Store user details in the session
                 $_SESSION['user_id']   = $user['id'];
                 $_SESSION['user_type'] = $user['type'];
 
-                // Redirect based on user type
-                if ($user['type'] === 'admin') {
-                    header('Location: dashboard.php');
-                } else {
-                    header('Location: dashboard.php');
-                }
+                header('Location: dashboard.php');
                 exit;
             } else {
                 $errors[] = 'Nom d\'utilisateur ou mot de passe incorrect.';
             }
-        } catch (PDOException $e) {
-            $errors[] = 'Erreur de base de données: ' . $e->getMessage();
+
+            $stmt->close();
+        } else {
+            $errors[] = 'Erreur de base de données: ' . $mysqli->error;
         }
     }
 }
